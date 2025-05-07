@@ -3,7 +3,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>念 · 粒子互動</title>
+  <title>念 · 一念起一念滅</title>
   <style>
     html, body {
       margin: 0;
@@ -12,11 +12,32 @@
     }
     canvas {
       display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+    #poem {
+      position: absolute;
+      bottom: 10%;
+      width: 100%;
+      text-align: center;
+      font-size: 32px;
+      font-family: 'Noto Serif TC', serif;
+      color: white;
+      opacity: 0.7;
+      animation: fadeInOut 6s infinite;
+      z-index: 1;
+    }
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0; }
+      20%, 80% { opacity: 1; }
     }
   </style>
 </head>
 <body>
 <canvas id="canvas"></canvas>
+<div id="poem">一念起</div>
 <script>
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -29,6 +50,16 @@ window.addEventListener("mousemove", e => {
   mouse.y = e.y;
 });
 
+// 切換詩句動畫
+const poem = document.getElementById("poem");
+const lines = ["一念起", "一念滅"];
+let index = 0;
+setInterval(() => {
+  index = (index + 1) % lines.length;
+  poem.innerText = lines[index];
+}, 6000);
+
+// 畫字取得像素點
 ctx.fillStyle = "#fff";
 ctx.font = "bold 200px 'Noto Sans TC', 'Microsoft JhengHei'";
 ctx.textAlign = "center";
