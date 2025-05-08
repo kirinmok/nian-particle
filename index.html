@@ -1,11 +1,130 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="refresh" content="0; URL='index2.html'" />
-    <title>轉址中...</title>
-  </head>
-  <body>
-    <p>自動導向中，若未跳轉請 <a href="index2.html">點此</a></p>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <title>念 · 一念起一念滅</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: black;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+    #poem {
+      position: absolute;
+      bottom: 10%;
+      width: 100%;
+      text-align: center;
+      font-size: 32px;
+      font-family: 'Noto Serif TC', serif;
+      color: white;
+      opacity: 0.7;
+      animation: fadeInOut 6s infinite;
+      z-index: 1;
+    }
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0; }
+      20%, 80% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="poem">一念起</div>
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let mouse = { x: null, y: null, radius: 100 };
+window.addEventListener("mousemove", e => {
+  mouse.x = e.x;
+  mouse.y = e.y;
+});
+
+// 切換詩句動畫
+const poem = document.getElementById("poem");
+const lines = ["一念起", "一念滅"];
+let index = 0;
+setInterval(() => {
+  index = (index + 1) % lines.length;
+  poem.innerText = lines[index];
+}, 6000);
+
+// 畫字取得像素點
+ctx.fillStyle = "#fff";
+ctx.font = "bold 200px 'Noto Sans TC', 'Microsoft JhengHei'";
+ctx.textAlign = "center";
+ctx.textBaseline = "middle";
+ctx.fillText("念", canvas.width / 2, canvas.height / 2);
+const textData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+let particles = [];
+class Particle {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.baseX = x;
+    this.baseY = y;
+    this.size = 1.5;
+    this.density = Math.random() * 30 + 1;
+  }
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+    ctx.fill();
+  }
+  update() {
+    let dx = mouse.x - this.x;
+    let dy = mouse.y - this.y;
+    let distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance < mouse.radius) {
+      let forceX = dx / distance * this.density;
+      let forceY = dy / distance * this.density;
+      this.x -= forceX;
+      this.y -= forceY;
+    } else {
+      this.x += (this.baseX - this.x) * 0.07;
+      this.y += (this.baseY - this.y) * 0.07;
+    }
+  }
+}
+
+function initParticles() {
+  particles = [];
+  for (let y = 0; y < textData.height; y += 4) {
+    for (let x = 0; x < textData.width; x += 4) {
+      const index = (y * textData.width + x) * 4;
+      if (textData.data[index + 3] > 128) {
+        let realX = x + canvas.width / 2 - textData.width / 2;
+        let realY = y + canvas.height / 2 - textData.height / 2;
+        particles.push(new Particle(realX, realY));
+      }
+    }
+  }
+}
+
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (let p of particles) {
+    p.update();
+    p.draw();
+  }
+  requestAnimationFrame(animate);
+}
+
+initParticles();
+animate();
+</script>
+</body>
 </html>
