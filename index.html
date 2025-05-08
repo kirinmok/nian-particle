@@ -3,7 +3,7 @@
 <html lang="zh-Hant">
   <head>
     <meta charset="UTF-8" />
-    <title>一念起</title>
+    <title>一念起 · 一念滅</title>
     <style>
       html, body {
         margin: 0;
@@ -14,21 +14,25 @@
       canvas {
         display: block;
       }
-      #title {
+      #poem {
         position: absolute;
-        bottom: 20px;
+        bottom: 5%;
         width: 100%;
         text-align: center;
-        color: #888;
-        font-size: 24px;
-        font-family: sans-serif;
+        color: #aaa;
+        font-size: 28px;
+        font-family: "Noto Serif TC", "serif";
+        animation: fadeInOut 6s infinite;
+      }
+      @keyframes fadeInOut {
+        0%, 100% { opacity: 0; }
+        20%, 80% { opacity: 1; }
       }
     </style>
   </head>
   <body>
     <canvas id="canvas"></canvas>
-    <div id="title">一念起</div>
-
+    <div id="poem">一念起</div>
     <script>
       const canvas = document.getElementById('canvas');
       const ctx = canvas.getContext('2d');
@@ -41,7 +45,7 @@
       window.addEventListener('resize', resize);
       resize();
 
-      const particleCount = 3000;
+      const particleCount = 8000; // 粒子數增加
       const particles = [];
       const mouse = { x: null, y: null };
 
@@ -55,7 +59,7 @@
       });
 
       const image = new Image();
-      image.src = 'blackbgnian.png'; // 圖片請放同資料夾
+      image.src = 'blackbgnian.png';
 
       image.onload = () => {
         const tempCanvas = document.createElement('canvas');
@@ -65,16 +69,20 @@
         tempCtx.drawImage(image, 0, 0);
         const imageData = tempCtx.getImageData(0, 0, image.width, image.height).data;
 
+        const offsetX = (width - image.width) / 2;
+        const offsetY = (height - image.height) / 2;
+
         for (let i = 0; i < particleCount; i++) {
           let tries = 0;
           while (tries < 1000) {
             const x = Math.floor(Math.random() * image.width);
             const y = Math.floor(Math.random() * image.height);
             const index = (y * image.width + x) * 4;
-            const alpha = imageData[index + 3];
-            if (alpha > 128) {
-              const offsetX = (width - image.width) / 2;
-              const offsetY = (height - image.height) / 2;
+            const r = imageData[index];
+            const g = imageData[index + 1];
+            const b = imageData[index + 2];
+            const brightness = (r + g + b) / 3;
+            if (brightness > 200) {
               const particle = {
                 x: offsetX + x,
                 y: offsetY + y,
@@ -105,7 +113,6 @@
             p.vx -= Math.cos(angle) * force * 2;
             p.vy -= Math.sin(angle) * force * 2;
           }
-          // 回復力與摩擦力
           p.vx += (p.originalX - p.x) * 0.01;
           p.vy += (p.originalY - p.y) * 0.01;
           p.vx *= 0.9;
@@ -118,6 +125,15 @@
         }
         requestAnimationFrame(animate);
       }
+
+      // 詩句輪播
+      const poem = document.getElementById("poem");
+      const lines = ["一念起", "一念滅"];
+      let index = 0;
+      setInterval(() => {
+        index = (index + 1) % lines.length;
+        poem.innerText = lines[index];
+      }, 6000);
     </script>
   </body>
 </html>
