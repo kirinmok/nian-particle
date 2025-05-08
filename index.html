@@ -1,139 +1,138 @@
 
 <!DOCTYPE html>
 <html lang="zh-Hant">
-  <head>
-    <meta charset="UTF-8" />
-    <title>一念起 · 一念滅</title>
-    <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        background: black;
-        overflow: hidden;
-      }
-      canvas {
-        display: block;
-      }
-      #poem {
-        position: absolute;
-        bottom: 5%;
-        width: 100%;
-        text-align: center;
-        color: #aaa;
-        font-size: 28px;
-        font-family: "Noto Serif TC", "serif";
-        animation: fadeInOut 6s infinite;
-      }
-      @keyframes fadeInOut {
-        0%, 100% { opacity: 0; }
-        20%, 80% { opacity: 1; }
-      }
-    </style>
-  </head>
-  <body>
-    <canvas id="canvas"></canvas>
-    <div id="poem">一念起</div>
-    <script>
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d');
-      let width, height;
+<head>
+  <meta charset="UTF-8" />
+  <title>一念起 · 一念滅</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+    }
+    #poem {
+      position: absolute;
+      bottom: 5%;
+      width: 100%;
+      text-align: center;
+      color: #aaa;
+      font-size: 28px;
+      font-family: "Noto Serif TC", "serif";
+      animation: fadeInOut 6s infinite;
+    }
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0; }
+      20%, 80% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="poem">一念起</div>
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    let width, height;
 
-      function resize() {
-        width = canvas.width = window.innerWidth;
-        height = canvas.height = window.innerHeight;
-      }
-      window.addEventListener('resize', resize);
-      resize();
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resize);
+    resize();
 
-      const particleCount = 8000; // 粒子數增加
-      const particles = [];
-      const mouse = { x: null, y: null };
+    const particleCount = 8000;
+    const particles = [];
+    const mouse = { x: null, y: null };
 
-      canvas.addEventListener('mousemove', (e) => {
-        mouse.x = e.clientX;
-        mouse.y = e.clientY;
-      });
-      canvas.addEventListener('mouseleave', () => {
-        mouse.x = null;
-        mouse.y = null;
-      });
+    canvas.addEventListener("mousemove", (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+    canvas.addEventListener("mouseleave", () => {
+      mouse.x = null;
+      mouse.y = null;
+    });
 
-      const image = new Image();
-      image.src = 'blackbgnian.png';
+    const image = new Image();
+    image.src = "blackbgnian.png";
 
-      image.onload = () => {
-        const tempCanvas = document.createElement('canvas');
-        const tempCtx = tempCanvas.getContext('2d');
-        tempCanvas.width = image.width;
-        tempCanvas.height = image.height;
-        tempCtx.drawImage(image, 0, 0);
-        const imageData = tempCtx.getImageData(0, 0, image.width, image.height).data;
+    image.onload = () => {
+      const scale = Math.min(width / image.width, height / image.height);
+      const drawW = image.width * scale;
+      const drawH = image.height * scale;
+      const offsetX = (width - drawW) / 2;
+      const offsetY = (height - drawH) / 2;
 
-        const offsetX = (width - image.width) / 2;
-        const offsetY = (height - image.height) / 2;
+      const tempCanvas = document.createElement("canvas");
+      const tempCtx = tempCanvas.getContext("2d");
+      tempCanvas.width = drawW;
+      tempCanvas.height = drawH;
+      tempCtx.drawImage(image, 0, 0, drawW, drawH);
+      const imageData = tempCtx.getImageData(0, 0, drawW, drawH).data;
 
-        for (let i = 0; i < particleCount; i++) {
-          let tries = 0;
-          while (tries < 1000) {
-            const x = Math.floor(Math.random() * image.width);
-            const y = Math.floor(Math.random() * image.height);
-            const index = (y * image.width + x) * 4;
-            const r = imageData[index];
-            const g = imageData[index + 1];
-            const b = imageData[index + 2];
-            const brightness = (r + g + b) / 3;
-            if (brightness > 200) {
-              const particle = {
-                x: offsetX + x,
-                y: offsetY + y,
-                originalX: offsetX + x,
-                originalY: offsetY + y,
-                vx: 0,
-                vy: 0
-              };
-              particles.push(particle);
-              break;
-            }
-            tries++;
+      for (let i = 0; i < particleCount; i++) {
+        let tries = 0;
+        while (tries < 1000) {
+          const x = Math.floor(Math.random() * drawW);
+          const y = Math.floor(Math.random() * drawH);
+          const index = (y * drawW + x) * 4;
+          const r = imageData[index];
+          const g = imageData[index + 1];
+          const b = imageData[index + 2];
+          if (r > 220 && g > 220 && b > 220) {
+            particles.push({
+              x: offsetX + x,
+              y: offsetY + y,
+              originalX: offsetX + x,
+              originalY: offsetY + y,
+              vx: 0,
+              vy: 0
+            });
+            break;
           }
+          tries++;
         }
-        animate();
-      };
-
-      function animate() {
-        ctx.clearRect(0, 0, width, height);
-        for (let p of particles) {
-          const dx = mouse.x - p.x;
-          const dy = mouse.y - p.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          const radius = 80;
-          if (mouse.x && dist < radius) {
-            const angle = Math.atan2(dy, dx);
-            const force = (radius - dist) / radius;
-            p.vx -= Math.cos(angle) * force * 2;
-            p.vy -= Math.sin(angle) * force * 2;
-          }
-          p.vx += (p.originalX - p.x) * 0.01;
-          p.vy += (p.originalY - p.y) * 0.01;
-          p.vx *= 0.9;
-          p.vy *= 0.9;
-          p.x += p.vx;
-          p.y += p.vy;
-
-          ctx.fillStyle = 'white';
-          ctx.fillRect(p.x, p.y, 1, 1);
-        }
-        requestAnimationFrame(animate);
       }
+      animate();
+    };
 
-      // 詩句輪播
-      const poem = document.getElementById("poem");
-      const lines = ["一念起", "一念滅"];
-      let index = 0;
-      setInterval(() => {
-        index = (index + 1) % lines.length;
-        poem.innerText = lines[index];
-      }, 6000);
-    </script>
-  </body>
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+      for (let p of particles) {
+        const dx = mouse.x - p.x;
+        const dy = mouse.y - p.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const radius = 80;
+        if (mouse.x && dist < radius) {
+          const angle = Math.atan2(dy, dx);
+          const force = (radius - dist) / radius;
+          p.vx -= Math.cos(angle) * force * 2;
+          p.vy -= Math.sin(angle) * force * 2;
+        }
+        p.vx += (p.originalX - p.x) * 0.01;
+        p.vy += (p.originalY - p.y) * 0.01;
+        p.vx *= 0.9;
+        p.vy *= 0.9;
+        p.x += p.vx;
+        p.y += p.vy;
+        ctx.fillStyle = "white";
+        ctx.fillRect(p.x, p.y, 1, 1);
+      }
+      requestAnimationFrame(animate);
+    }
+
+    const poem = document.getElementById("poem");
+    const lines = ["一念起", "一念滅"];
+    let index = 0;
+    setInterval(() => {
+      index = (index + 1) % lines.length;
+      poem.innerText = lines[index];
+    }, 6000);
+  </script>
+</body>
 </html>
