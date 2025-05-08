@@ -1,55 +1,123 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
-<head>
-  <meta charset="UTF-8">
-  <title>念｜書法版</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background-color: #000;
-      color: #fff;
-      height: 100vh;
-      overflow: hidden;
-      font-family: "Noto Serif TC", serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-    }
-
-    .svg-wrapper {
-      width: 40vw;
-      max-width: 600px;
-      min-width: 200px;
-      animation: fadeIn 2s ease-out;
-    }
-
-    .description {
-      margin-top: 1rem;
-      font-size: 1.2rem;
-      opacity: 0.75;
-      text-align: center;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.9); }
-      to { opacity: 1; transform: scale(1); }
-    }
-
-    @media (max-width: 600px) {
-      .svg-wrapper {
-        width: 70vw;
+  <head>
+    <meta charset="UTF-8" />
+    <title>一念起</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: black;
+        overflow: hidden;
       }
-      .description {
-        font-size: 1rem;
+      canvas {
+        display: block;
       }
-    }
-  </style>
-</head>
-<body>
-  <img src="nian.svg" alt="念書法字" class="svg-wrapper" />
-  <div class="description">一念起，萬象生；一念滅，歸於空。</div>
-</body>
+      #title {
+        position: absolute;
+        bottom: 20px;
+        width: 100%;
+        text-align: center;
+        color: #888;
+        font-size: 24px;
+        font-family: sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <div id="title">一念起</div>
+
+    <script>
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+
+      function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      const particleCount = 3000;
+      const particles = [];
+      const mouse = { x: null, y: null };
+
+      canvas.addEventListener('mousemove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+      canvas.addEventListener('mouseleave', () => {
+        mouse.x = null;
+        mouse.y = null;
+      });
+
+      const image = new Image();
+      image.src = 'blackbgnian.png'; // 圖片請放同資料夾
+
+      image.onload = () => {
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = image.width;
+        tempCanvas.height = image.height;
+        tempCtx.drawImage(image, 0, 0);
+        const imageData = tempCtx.getImageData(0, 0, image.width, image.height).data;
+
+        for (let i = 0; i < particleCount; i++) {
+          let tries = 0;
+          while (tries < 1000) {
+            const x = Math.floor(Math.random() * image.width);
+            const y = Math.floor(Math.random() * image.height);
+            const index = (y * image.width + x) * 4;
+            const alpha = imageData[index + 3];
+            if (alpha > 128) {
+              const offsetX = (width - image.width) / 2;
+              const offsetY = (height - image.height) / 2;
+              const particle = {
+                x: offsetX + x,
+                y: offsetY + y,
+                originalX: offsetX + x,
+                originalY: offsetY + y,
+                vx: 0,
+                vy: 0
+              };
+              particles.push(particle);
+              break;
+            }
+            tries++;
+          }
+        }
+        animate();
+      };
+
+      function animate() {
+        ctx.clearRect(0, 0, width, height);
+        for (let p of particles) {
+          const dx = mouse.x - p.x;
+          const dy = mouse.y - p.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const radius = 80;
+          if (mouse.x && dist < radius) {
+            const angle = Math.atan2(dy, dx);
+            const force = (radius - dist) / radius;
+            p.vx -= Math.cos(angle) * force * 2;
+            p.vy -= Math.sin(angle) * force * 2;
+          }
+          // 回復力與摩擦力
+          p.vx += (p.originalX - p.x) * 0.01;
+          p.vy += (p.originalY - p.y) * 0.01;
+          p.vx *= 0.9;
+          p.vy *= 0.9;
+          p.x += p.vx;
+          p.y += p.vy;
+
+          ctx.fillStyle = 'white';
+          ctx.fillRect(p.x, p.y, 1, 1);
+        }
+        requestAnimationFrame(animate);
+      }
+    </script>
+  </body>
 </html>
